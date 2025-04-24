@@ -9,4 +9,5 @@ Testings
 3. Upload Program Kalian di Branch template: Nama1-absen1/Nama2-absen2
 4. Edit file README kalian dengan mengisi Judul game (pojok bawah branch, logo pensil)
 
+# Screenshotan
 ![screenshot](epep.jpg)
