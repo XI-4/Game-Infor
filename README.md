@@ -10,4 +10,4 @@ Testings
 4. Edit file README kalian dengan mengisi Judul game (pojok bawah branch, logo pensil)
 
 # Screenshotan
-![screenshot](epep.jpg)
+![screenshot](jormun.png)
