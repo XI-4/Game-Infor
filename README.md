@@ -1,7 +1,7 @@
 # Game-Infor
 Tempat pengumpulan game python informatika
 # Nama Game
-SIgmaboi
+Falling Circles
 # SETUP
 Testings
 1. Klik Opsi "Branch"
