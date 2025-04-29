@@ -1,0 +1,1 @@
+del music.m4a | del music.mp3 | del musics.mp3 | del quit.vbs | del main.py 
