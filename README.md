@@ -1,7 +1,7 @@
 # Game-Infor
 Tempat pengumpulan game python informatika
 # Nama Game
-SIgmaboi
+Minesweep
 # SETUP
 Testings
 1. Klik Opsi "Branch"
@@ -10,4 +10,4 @@ Testings
 4. Edit file README kalian dengan mengisi Judul game (pojok bawah branch, logo pensil)
 
 # Screenshotan
-![screenshot](epep.jpg)
+![screenshot](minesweep.jpg)
