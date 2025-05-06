@@ -1,12 +1,229 @@
-# Game-Infor
-Tempat pengumpulan game python informatika
-# Nama Game
-SIgmaboi
-# SETUP
-Testings
-1. Klik Opsi "Branch"
-2. Klik "New Branch", lalu beri label dengan nama game kalian  
-3. Upload Program Kalian di Branch template: Nama1-absen1/Nama2-absen2
-4. Edit file README kalian dengan mengisi Judul game (pojok bawah branch, logo pensil)
+import pygame
+import os
+from random import randint
 
-![screenshot]()
+pygame.init()
+pygame.mixer.init()
+
+# Load Sound Effects
+eat_sound = pygame.mixer.Sound('d:/python/sounds/andre.wav')
+boom_sound = pygame.mixer.Sound('d:/python/sounds/die1.wav')
+
+# Load Background Music
+pygame.mixer.music.load('d:/python/sounds/bg_music.mp3')
+pygame.mixer.music.set_volume(0.5)  # Volume bisa diatur sesuai selera
+pygame.mixer.music.play(-1)         # Musik akan looping terus
+
+width = 750
+height = 750
+
+win = pygame.display.set_mode((width, height))
+pygame.display.set_caption('Resik Kucai')
+
+# Load Background Texture
+background_image = pygame.image.load('D:/python/assets/wood_bg1.jpg').convert()
+background_image = pygame.transform.scale(background_image, (width, height))
+
+# Colors
+red = (255, 0, 0)
+green = (0, 255, 0)
+purple = (255, 0, 255)
+black = (0, 0, 0)
+
+# Warna slide pelangi
+def get_slide_color(offset):
+    r = (pygame.time.get_ticks() // 5 + offset) % 255
+    g = (pygame.time.get_ticks() // 5 + offset + 85) % 255
+    b = (pygame.time.get_ticks() // 5 + offset + 170) % 255
+    return (r, g, b)
+
+# Leaderboard functions
+def save_score(score):
+    if score > 0:
+        with open("leaderboard.txt", "a") as file:
+            file.write(str(score) + "\n")
+
+def load_leaderboard():
+    if not os.path.exists("leaderboard.txt"):
+        return []
+    with open("leaderboard.txt", "r") as file:
+        scores = [int(line.strip()) for line in file if line.strip().isdigit()]
+    scores.sort(reverse=True)
+    return scores[:5]
+
+# Game Objects
+class Snake(pygame.sprite.Sprite):
+    def __init__(self):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.image.load('D:/python/assets/vacum2.png').convert_alpha()
+        self.image = pygame.transform.scale(self.image, (80, 80))
+        self.rect = self.image.get_rect()
+        self.score = 0
+        self.highScore = 0
+        self.speed = 10
+        self.dx = 0
+        self.dy = 0
+
+class Food(pygame.sprite.Sprite):
+    def __init__(self):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.image.load('D:/python/assets/can.png').convert_alpha()
+        self.image = pygame.transform.scale(self.image, (55, 55))
+        self.rect = self.image.get_rect()
+    
+    def move(self):
+        placed = False
+        while not placed:
+            self.rect.x = randint(50, width - 100)
+            self.rect.y = randint(50, height - 100)
+            if not any(self.rect.colliderect(bomb.rect) for bomb in bomb_group):
+                placed = True
+
+class Bomb(pygame.sprite.Sprite):
+    def __init__(self):
+        pygame.sprite.Sprite.__init__(self)
+        self.image_original = pygame.image.load('D:/python/assets/bomb.png').convert_alpha()
+        self.image_original = pygame.transform.scale(self.image_original, (57, 57))
+        self.image = pygame.Surface((100, 100), pygame.SRCALPHA)
+
+        # Glow kuning
+        glow_radius = 45
+        glow_color = (255, 255, 0, 100)  # kuning transparan
+        pygame.draw.circle(self.image, glow_color, (50, 50), glow_radius)
+
+        # Tempel gambar bom ke tengah glow
+        self.image.blit(self.image_original, (50 - 28, 50 - 28))
+        self.rect = self.image.get_rect()
+
+def place_bomb_safe_from_snake_and_food():
+    bomb = Bomb()
+    placed = False
+    while not placed:
+        bomb.rect.x = randint(50, width - 100)
+        bomb.rect.y = randint(50, height - 100)
+        if (not bomb.rect.colliderect(snake.rect) and
+            not bomb.rect.colliderect(food.rect)):
+            placed = True
+    bomb_group.add(bomb)
+
+snake = Snake()
+snake.rect.x = width // 2
+snake.rect.y = height // 2
+
+food = Food()
+
+sprites_group = pygame.sprite.Group()
+sprites_group.add(snake)
+sprites_group.add(food)
+
+bomb_group = pygame.sprite.Group()
+
+food.move()
+
+# Redraw Function
+def redraw():
+    if playing:
+        win.blit(background_image, (0, 0))
+
+        font = pygame.font.SysFont('Time New Roman', 30)
+        slide_color = get_slide_color(0)
+        score = font.render('SCORE: ' + str(snake.score), False, slide_color)
+        scoreRect = score.get_rect()
+        scoreRect.center = (width // 2, 50)
+        win.blit(score, scoreRect)
+
+        sprites_group.update()
+        sprites_group.draw(win)
+        bomb_group.update()
+        bomb_group.draw(win)
+    else:
+        win.fill(black)
+        font = pygame.font.SysFont('Times New Roman', 69)
+
+        title = font.render('RESIK KUCAI', False, green)
+        titleRect = title.get_rect()
+        titleRect.center = (width // 2, 100)
+        win.blit(title, titleRect)
+
+        high = font.render('High Score: ' + str(snake.highScore), False, purple)
+        highRect = high.get_rect()
+        highRect.center = (width // 2, height // 2 - 80)
+        win.blit(high, highRect)
+
+        leaderboard = load_leaderboard()
+        small_font = pygame.font.SysFont('Arial', 28)
+        for i, score_val in enumerate(leaderboard):
+            text = small_font.render(f"{i+1}. {score_val}", True, green)
+            win.blit(text, (width // 2 - 50, height // 2 + i * 30))
+
+        start_color = get_slide_color(150)
+        start = font.render('Press Space to Start', False, start_color)
+        StartRect = start.get_rect()
+        StartRect.center = (width // 2, height - 100)
+        win.blit(start, StartRect)
+
+    pygame.display.update()
+
+run = True
+playing = False
+
+while run:
+    pygame.time.delay(60)
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            run = False
+
+    if playing:
+        snake.rect.x += snake.dx
+        snake.rect.y += snake.dy
+
+        key = pygame.key.get_pressed()
+        if key[pygame.K_LEFT]:
+            snake.dx = -snake.speed
+            snake.dy = 0
+        if key[pygame.K_RIGHT]:
+            snake.dx = snake.speed
+            snake.dy = 0
+        if key[pygame.K_UP]:
+            snake.dy = -snake.speed
+            snake.dx = 0
+        if key[pygame.K_DOWN]:
+            snake.dy = snake.speed
+            snake.dx = 0
+
+        if snake.rect.colliderect(food.rect):
+            eat_sound.play()
+            food.move()
+            place_bomb_safe_from_snake_and_food()
+            snake.score += 1
+
+        for bomb in bomb_group:
+            if bomb.rect.colliderect(snake.rect):
+                boom_sound.play()
+                save_score(snake.score)
+                if snake.score > snake.highScore:
+                    snake.highScore = snake.score
+                playing = False
+
+        if (snake.rect.left < 0 or snake.rect.right > width or
+            snake.rect.top < 0 or snake.rect.bottom > height):
+            boom_sound.play()
+            save_score(snake.score)
+            if snake.score > snake.highScore:
+                snake.highScore = snake.score
+            playing = False
+    else:
+        key = pygame.key.get_pressed()
+        if key[pygame.K_SPACE]:
+            playing = True
+            snake.rect.x = width // 2
+            snake.rect.y = height // 2
+            snake.score = 0
+            bomb_group.empty()
+            snake.dx = 0
+            snake.dy = 0
+            food.move()
+
+    redraw()
+
+pygame.quit()
