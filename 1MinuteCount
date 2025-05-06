@@ -1,0 +1,237 @@
+import random
+from tkinter import *
+import time
+
+# Warna tema
+BG_COLOR = "#2E3440"
+TEXT_COLOR = "#ECEFF4"
+BUTTON_COLOR = "#5E81AC"
+ENTRY_COLOR = "#4C566A"
+
+# Variabel global
+num1, num2 = 0, 0
+score = 0
+time_left = 60  # Diubah menjadi 60 detik
+lives = 3  # Tambahan nyawa
+current_operation = "+"
+difficulty = "easy"
+timer_running = False
+game_active = False
+
+# Angka berdasarkan level kesulitan
+def get_numbers():
+    global num1, num2
+    if difficulty == "easy":
+        num1 = random.randint(1, 10)
+        num2 = random.randint(1, 10)
+    elif difficulty == "medium":
+        num1 = random.randint(5, 20)
+        num2 = random.randint(5, 20)
+    else:  # hard
+        num1 = random.randint(10, 50)
+        num2 = random.randint(10, 50)
+    
+    # Untuk pembagian, pastikan hasilnya integer
+    if current_operation == "/":
+        num1 = num1 * num2
+    return num1, num2
+
+# Hitung jawaban benar
+def calculate_answer():
+    if current_operation == "+":
+        return num1 + num2
+    elif current_operation == "-":
+        return num1 - num2
+    elif current_operation == "*":
+        return num1 * num2
+    elif current_operation == "/":
+        return num1 // num2
+
+# Update pertanyaan
+def update_question():
+    global num1, num2
+    num1, num2 = get_numbers()
+    question_label.config(text=f"{num1} {current_operation} {num2} = ?")
+    answer_entry.delete(0, END)
+    answer_entry.focus()
+
+# Cek jawaban
+def check_answer(event=None):  # Tambahkan event=None untuk handle Enter key
+    global score, lives
+    
+    if not game_active:
+        return
+    
+    try:
+        user_answer = int(answer_entry.get())
+        correct_answer = calculate_answer()
+        
+        if user_answer == correct_answer:
+            result_label.config(text="Correct!", fg="#A3BE8C")
+            score += 1
+            if difficulty == "easy":
+                score += 1
+            elif difficulty == "medium":
+                score += 2
+            else:
+                score += 3
+        else:
+            result_label.config(text=f"Wrong! Answer: {correct_answer}", fg="#BF616A")
+            lives -= 1
+            lives_label.config(text=f"❤️ × {lives}")
+            if lives <= 0:
+                end_game()
+                return
+        
+        score_label.config(text=f"Score: {score}")
+        update_question()
+    except ValueError:
+        result_label.config(text="Please enter a number!", fg="#BF616A")
+
+# Timer countdown
+def countdown():
+    global time_left, timer_running
+    
+    if timer_running and time_left > 0:
+        time_left -= 1
+        timer_label.config(text=f"Time: {time_left}s")
+        app.after(1000, countdown)
+    elif time_left <= 0:
+        end_game()
+
+# Mulai game
+def start_game():
+    global score, time_left, timer_running, lives, game_active
+    score = 0
+    time_left = 60  # Reset ke 60 detik
+    lives = 3
+    timer_running = True
+    game_active = True
+    
+    score_label.config(text=f"Score: {score}")
+    lives_label.config(text=f"❤️ × {lives}")
+    timer_label.config(text=f"Time: {time_left}s")
+    result_label.config(text="")
+    update_question()
+    countdown()
+    start_btn.config(state=DISABLED)
+
+# Akhiri game
+def end_game():
+    global timer_running, game_active
+    timer_running = False
+    game_active = False
+    result_label.config(text=f"Game Over! Final Score: {score}", fg="#EBCB8B")
+    start_btn.config(state=NORMAL)
+
+# Ganti operasi matematika
+def change_operation(op):
+    global current_operation
+    current_operation = op
+    if game_active:
+        update_question()
+    for btn in operation_buttons:
+        btn.config(bg=BUTTON_COLOR)
+    operation_buttons[["+", "-", "*", "/"].index(op)].config(bg="#88C0D0")
+
+# Ganti level kesulitan
+def change_difficulty(level):
+    global difficulty
+    difficulty = level
+    if game_active:
+        update_question()
+    for btn in difficulty_buttons:
+        btn.config(bg=BUTTON_COLOR)
+    difficulty_buttons[["easy", "medium", "hard"].index(level)].config(bg="#88C0D0")
+
+# Membuat GUI
+app = Tk()
+app.title("1MinuteCount")  # Judul diubah
+app.geometry("600x700")  # Ukuran sedikit diperbesar
+app.configure(bg=BG_COLOR)
+app.resizable(False, False)
+
+# Bind Enter key
+app.bind('<Return>', check_answer)
+
+# Frame utama
+main_frame = Frame(app, bg=BG_COLOR)
+main_frame.pack(pady=20)
+
+# Judul
+title_label = Label(main_frame, text="1MinuteCount", font=("Courier", 24, "bold"), 
+                   bg=BG_COLOR, fg="#D08770") 
+title_label.grid(row=0, column=0, columnspan=4, pady=10)
+
+# Info skor, waktu, dan nyawa
+info_frame = Frame(main_frame, bg=BG_COLOR)
+info_frame.grid(row=1, column=0, columnspan=4, pady=10)
+
+score_label = Label(info_frame, text="Score: 0", font=("Courier", 14), 
+                   bg=BG_COLOR, fg=TEXT_COLOR)
+score_label.pack(side=LEFT, padx=10)
+
+lives_label = Label(info_frame, text="❤️ × 3", font=("Courier", 14), 
+                   bg=BG_COLOR, fg="#BF616A")
+lives_label.pack(side=LEFT, padx=10)
+
+timer_label = Label(info_frame, text="Time: 60s", font=("Courier", 14), 
+                   bg=BG_COLOR, fg=TEXT_COLOR)
+timer_label.pack(side=LEFT, padx=10)
+
+# Pertanyaan
+question_label = Label(main_frame, text="Press Start", font=("Courier", 24, "bold"), 
+                      bg=BG_COLOR, fg="#B48EAD")  # Warna pertanyaan diubah
+question_label.grid(row=2, column=0, columnspan=4, pady=20)
+
+# Input jawaban
+answer_entry = Entry(main_frame, font=("Courier", 20), bg=ENTRY_COLOR, fg=TEXT_COLOR, 
+                    borderwidth=0, justify=CENTER)
+answer_entry.grid(row=3, column=0, columnspan=4, pady=10, ipady=5, ipadx=10)
+
+# Tombol operasi
+operations_frame = Frame(main_frame, bg=BG_COLOR)
+operations_frame.grid(row=4, column=0, columnspan=4, pady=10)
+
+operation_buttons = []
+for i, op in enumerate(["+", "-", "*", "/"]):
+    btn = Button(operations_frame, text=op, font=("Courier", 16), width=3,
+                bg=BUTTON_COLOR, fg=TEXT_COLOR, borderwidth=0,
+                command=lambda o=op: change_operation(o))
+    btn.grid(row=0, column=i, padx=5)
+    operation_buttons.append(btn)
+
+# Tombol kesulitan
+difficulty_frame = Frame(main_frame, bg=BG_COLOR)
+difficulty_frame.grid(row=5, column=0, columnspan=4, pady=10)
+
+difficulty_buttons = []
+for i, level in enumerate(["easy", "medium", "hard"]):
+    btn = Button(difficulty_frame, text=level.capitalize(), font=("Courier", 12),
+                bg=BUTTON_COLOR, fg=TEXT_COLOR, borderwidth=0,
+                command=lambda l=level: change_difficulty(l))
+    btn.grid(row=0, column=i, padx=5)
+    difficulty_buttons.append(btn)
+
+# Tombol aksi
+action_frame = Frame(main_frame, bg=BG_COLOR)
+action_frame.grid(row=6, column=0, columnspan=4, pady=20)
+
+submit_btn = Button(action_frame, text="Submit (Enter)", font=("Courier", 14), width=15,
+                   bg="#A3BE8C", fg=TEXT_COLOR, borderwidth=0, command=check_answer)
+submit_btn.grid(row=0, column=0, padx=10)
+
+start_btn = Button(action_frame, text="Start", font=("Courier", 14), width=15,
+                  bg="#5E81AC", fg=TEXT_COLOR, borderwidth=0, command=start_game)
+start_btn.grid(row=0, column=1, padx=10)
+
+# Hasil
+result_label = Label(main_frame, text="", font=("Courier", 14), 
+                    bg=BG_COLOR, fg=TEXT_COLOR)
+result_label.grid(row=7, column=0, columnspan=4, pady=10)
+
+# Set default
+change_operation("+")
+change_difficulty("easy")
+
+app.mainloop()
